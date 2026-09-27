@@ -2,7 +2,7 @@
 
 
 
-def neg {a : Prop} : Prop := a → False
+def neg (a : Prop) : Prop := a → False
 inductive MyFalse : Prop
 #check MyFalse
 #check neg
