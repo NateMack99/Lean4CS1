@@ -342,6 +342,18 @@ structure Chicken
 def choiceChicken : Chicken ⊕ Fish := Sum.inl Chicken.mk
 def choiceFish : Chicken ⊕ Fish := Sum.inr Fish.mk
 
+def swap2 {α : Type u} {β : Type v} : α ⊕ β → β ⊕ α
+:= fun p => match p with
+  | Sum.inl a => Sum.inr a
+  | Sum.inr b => Sum.inl b
+
+-- theorem swap_comm {α β : Type u} (x : α) (y : β) :
+--   Eq (swap (swap (x, y))) (x, y) := Eq.refl (x, y)
+
+theorem or_swap_swap {α : Type u} {β : Type v} (p : α ⊕ β) :
+  p = swap2 (swap2 (p)) := by
+  cases p <;> rfl
+
 -- Elimination is by case analysis
 
 def proteinToString : Chicken ⊕ Fish → String
@@ -419,5 +431,14 @@ example {P Q : Prop} : P ∨ Q → Q ∨ P
 | Or.inr q => Or.inl q
 
 
--- PROVE: P ∨ Q ∧ R → P ∧ Q ∨ P ∧ R -- ∧ has higher prec.
--- PROVE P ∨ Q ∨ R → (P ∨ Q) ∨ R
+example {P Q R : Prop} : P ∨ Q ∧ R → (P ∨ Q) ∧ (P ∨ R)
+| Or.inl p => ⟨Or.inl p, Or.inl p⟩
+| Or.inr ⟨q, r⟩ => ⟨Or.inr q, Or.inr r⟩
+
+example {P Q R : Prop} : P ∨ Q ∨ R → (P ∨ Q) ∨ R
+| Or.inl p => Or.inl (Or.inl p)
+| Or.inr (Or.inl q) => Or.inl (Or.inr q)
+| Or.inr (Or.inr r) => Or.inr r
+
+example {P Q : Prop} : ¬(P ∨ Q) → (¬P ∧ ¬Q)
+| h => ⟨fun p => h (Or.inl p), fun q => h (Or.inr q)⟩
