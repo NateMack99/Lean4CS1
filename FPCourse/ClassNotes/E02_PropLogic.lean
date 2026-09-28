@@ -286,5 +286,14 @@ nation over disjunction (not over or).
 theorem DM3 (P Q : Prop) : ¬(P ∨ Q) → ¬P ∧ ¬Q :=
 fun h =>
 And.intro
-| (fun p : P => h (Or.inl p))
-| (fun q : Q => h (Or.ir q))
+  (fun p : P => h (Or.inl p))
+  (fun q : Q => h (Or.inr q))
+
+theorem DM4 (P Q : Prop) : ¬P ∧ ¬Q → ¬(P ∨ Q) :=
+fun h =>
+let np := And.left h
+let nq := And.right h
+fun poq =>
+match poq with
+| (Or.inl p) => np p
+| (Or.inr q) => nq q
