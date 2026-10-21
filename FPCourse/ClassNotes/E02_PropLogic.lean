@@ -317,11 +317,83 @@ theorem DM1 (P Q : Prop) (em : ExcludedMiddle) : ¬(P ∧ Q) → ¬P ∨ ¬Q :=
 fun h =>
 match (em P) with
 | Or.inr np => Or.inl np
-| Or.inl p => 
+| Or.inl p =>
   match (em Q) with
   | Or.inr nq => Or.inr nq
   | Or.inl q => nomatch h ⟨p, q⟩
-  
 
 
+example (P: Prop): ¬(P ∧ ¬P) :=
+fun ⟨p, np⟩ =>
+np p
 
+example (P Q R : Prop) : P ∧ (Q ∨ R) → (P ∧ Q) ∨ (P ∧ R) :=
+fun h =>
+let ⟨p, qor⟩ := h
+match qor with
+| Or.inl q => Or.inl (And.intro p q)
+| Or.inr r => Or.inr (And.intro p r)
+
+
+inductive Dog where
+| Iris
+| Fido
+| Sargent
+
+open Dog
+inductive Friendly : Dog → Prop where
+| irisFriendly : Friendly Iris
+| fidoFriendly : Friendly Fido
+
+
+example : ∃(d : Dog), ¬(Friendly d) :=
+  Exists.intro Sargent (
+    fun  h =>
+    nomatch h
+  )
+#check Sort
+inductive Furry : Dog → Prop where
+| irisFurry : Furry Iris
+| sargentFurry : Furry Sargent
+
+def Suitable (d: Dog) : Prop := (Friendly d ∧ Furry d)
+
+example : Suitable Iris :=
+  And.intro Friendly.irisFriendly Furry.irisFurry
+
+-- If there's a dog that's suitable, then there's a dog that's friendly
+
+theorem sd_to_fd (d : Dog) : Suitable d → Friendly d :=
+  fun sd =>
+    let ⟨fd, _⟩ := sd
+    fd
+
+example : (∃d : Dog, Suitable d) → (∃d : Dog, Friendly d) :=
+  fun h =>
+  let ⟨w, pw⟩ := h
+  let fw := sd_to_fd w pw
+  Exists.intro w fw
+
+
+namespace NNat
+
+inductive NNat where
+| zero : NNat
+| succ  : NNat → NNat
+
+
+def nzero := NNat.zero
+def none := NNat.succ NNat.zero
+
+def add : NNat → NNat → NNat
+  | a, NNat.zero => a
+  | a, NNat.succ b => NNat.succ (add a b)
+
+def mul : NNat → NNat → NNat
+  | _, NNat.zero => NNat.zero
+  | a, NNat.succ b => NNat.add a (mul a b)
+
+#reduce add (add none none) nzero
+
+instance : Add NNat where
+  add := add
