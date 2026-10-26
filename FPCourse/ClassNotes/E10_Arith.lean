@@ -1,3 +1,4 @@
+
 /- @@@
 # Typeclasses: A Language of Arithmetic
 
@@ -273,6 +274,49 @@ using subtraction, negation, and variables
 work with usual precedence and associativity.
 @@@ -/
 
+def sub : KNat → KNat → KNat
+  | KNat.zero, _ => KNat.zero
+  | a, KNat.zero => a
+  | KNat.succ a, KNat.succ b => sub a b
+
+def eq : KNat → KNat → Bool
+  | KNat.zero, KNat.zero => true
+  | KNat.succ _, KNat.zero => false
+  | KNat.zero,  KNat.succ _ => false
+  | KNat.succ a, KNat.succ b => eq a b
+
+def leq : KNat → KNat → Bool
+  | KNat.zero, KNat.zero => true
+  | KNat.succ _, KNat.zero => false
+  | KNat.zero,  KNat.succ _ => true
+  | KNat.succ a, KNat.succ b => leq a b
+
+inductive KNatVar where
+  | X
+  | Y
+
+open KNatVar
+
+def KNatInterp : Type := KNatVar -> KNat
+
+def interp1 : KNatInterp
+  | X => KNat.succ (KNat.succ (KNat.succ (KNat.succ KNat.zero))) -- 4
+  | Y => KNat.succ (KNat.succ KNat.zero) -- 2
+
+
+def eval (interp : KNatInterp) : KNat ⊕ KNatVar →  KNat
+  | Sum.inl n => n
+  | Sum.inr v => interp v
+
+#eval eval interp1 (Sum.inr KNatVar.X)
+
+def sub_var (interp : KNatInterp) (a b : KNat ⊕ KNatVar) : KNat :=
+  sub (eval interp a) (eval interp b)
+
+
+instance : Sub KNat where
+  sub := KNat.sub
+
 end KNat
 
 
@@ -318,3 +362,42 @@ def e4 : Expr :=   -- 7 + (6 + 9)
 
 
 end Arith
+
+inductive MyOption (α : Type) where
+| None
+| Some (a : α)
+
+def dec (n : Nat) : (MyOption Nat) :=
+match n with
+|  Nat.zero => MyOption.None
+| (Nat.succ n) => MyOption.Some n
+
+
+inductive MyList (α : Type) where
+| Nil
+| Cons (a : α) (b : MyList α)
+
+def head (arr : MyList α) : MyOption α :=
+match arr with
+| MyList.Nil => MyOption.None
+| MyList.Cons a _ => MyOption.Some a
+
+def tail (arr : MyList α) : MyOption α :=
+  match arr with
+  | MyList.Nil => MyOption.None
+  | MyList.Cons a b =>
+    match b with
+    | MyList.Nil => MyOption.Some a
+    | MyList.Cons _ c => head c
+
+def fold (f : α → α → α) (id : α) : MyList α → α
+| MyList.Nil => id
+| MyList.Cons a b => f a (fold f id b)
+
+def sum : MyList Nat → Nat := (fold Nat.add 0)
+
+def assoc (f : α → α → α) : Prop := ∀ a b c : α, f a (f b c) = f (f a b) c
+
+def fold2 (f : α → α → α) (_ : (assoc f)) (id : α) : MyList α → α :=
+  fold f id
+
